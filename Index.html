@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Happy Birthday Anupama!</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@300;400;700&family=Mochiy+Pop+One&family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        /* --- Design System --- */
+        :root {
+            --bg-cream: #FDF6F0;
+            --soft-pink: #FFB7B2;
+            --pop-pink: #FF9AA2;
+            --mint-green: #B5EAD7;
+            --lavender: #E2F0CB;
+            --text-choco: #4A403A;
+            --gold: #FFD700;
+        }
+
+        body {
+            font-family: 'Gaegu', cursive;
+            background-color: #FAACA8;
+            background-image: linear-gradient(19deg, #FAACA8 0%, #DDD6F3 100%);
+            color: var(--text-choco);
+            overflow: hidden;
+            touch-action: manipulation;
+            margin: 0;
+            padding: 0;
+        }
+
+        .font-chunky { font-family: 'Mochiy Pop One', sans-serif; }
+        .font-script { font-family: 'Dancing Script', cursive; }
+
+        /* --- Animations --- */
+        .sticker {
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.15));
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            -webkit-user-drag: none;
+            user-select: none;
+        }
+        .sticker:active { transform: scale(0.95); }
+        .sticker:hover { transform: scale(1.05) rotate(2deg); }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .animate-float { animation: float 3s ease-in-out infinite; }
+
+        @keyframes float-delayed {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+        .animate-float-delay { animation: float-delayed 3.5s ease-in-out infinite 1.5s; }
+
+        @keyframes wiggle {
+            0%, 100% { transform: rotate(-3deg); }
+            50% { transform: rotate(3deg); }
+        }
+        .animate-wiggle { animation: wiggle 2s ease-in-out infinite; }
+
+        /* --- Envelope --- */
+        .envelope-wrapper { perspective: 1000px; }
+        .envelope {
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+            cursor: pointer;
+        }
+        .envelope.open { animation: openEnvelope 1.5s forwards; }
+        @keyframes openEnvelope {
+            0% { transform: scale(1) rotate(0); }
+            50% { transform: scale(1.1) rotate(0); }
+            100% { transform: scale(5) rotate(10deg); opacity: 0; }
+        }
+
+        /* --- Candle Flame --- */
+        .flame {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 15px;
+            height: 25px;
+            background: linear-gradient(to bottom, #FFF 0%, #FFD700 50%, #FF4500 100%);
+            border-radius: 50% 50% 20% 20%;
+            animation: flicker 1s infinite alternate;
+            opacity: 0.9;
+            box-shadow: 0 0 10px #FFD700, 0 0 20px #FF4500;
+        }
+        .flame.out { animation: puff 0.5s forwards; }
+        @keyframes flicker {
+            0% { transform: translateX(-50%) scale(1); opacity: 0.9; }
+            100% { transform: translateX(-50%) scale(1.1); opacity: 1; }
+        }
+        @keyframes puff {
+            0% { transform: translateX(-50%) scale(1); opacity: 1; }
+            50% { transform: translateX(-50%) scale(1.5); opacity: 0.5; bottom: 10px; }
+            100% { transform: translateX(-50%) scale(0); opacity: 0; bottom: 30px; }
+        }
+
+        /* --- UI Components --- */
+        .page {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            transition: opacity 0.5s ease, transform 0.5s ease;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 10;
+        }
+        .page.active {
+            opacity: 1;
+            pointer-events: all;
+            z-index: 20;
+            transform: translateY(0);
+        }
+        .page.hidden { transform: translateY(20px); }
+
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .cursor::after {
+            content: '|';
+            animation: blink 1s step-start infinite;
+            color: #FF9AA2;
+        }
+        @keyframes blink { 50% { opacity: 0; } }
+
+        .polaroid:nth-child(even) { transform: rotate(2deg); }
+        .polaroid:nth-child(odd) { transform: rotate(-2deg); }
+        .polaroid:hover { transform: rotate(0deg) scale(1.02); z-index: 10; }
+
+        .animate-spin-slow { animation: spin 4s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* Calendar Widget */
+        .calendar-widget {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            overflow: hidden;
+            width: 55px;
+            text-align: center;
+            border: 2px solid white;
+        }
+        .cal-header { background: #FF9AA2; height: 18px; width: 100%; }
+        .cal-body {
+            font-family: 'Mochiy Pop One', sans-serif;
+            font-size: 0.9rem;
+            color: #4A403A;
+            padding: 4px 0;
+            line-height: 1.2;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex justify-center items-center p-0 md:p-4 selection:bg-[#FF9AA2] selection:text-white">
+
+    <!-- App Container -->
+    <div class="relative w-full max-w-[420px] h-[100dvh] md:h-[850px] bg-[#FDF6F0] md:rounded-[45px] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] border-0 md:border-[10px] border-white overflow-hidden flex flex-col">
+
+        <!-- ==================== SCREEN 1: ENVELOPE ==================== -->
+        <div id="screen-envelope" class="page active flex flex-col items-center justify-center bg-[#FF9AA2]">
+            <div class="envelope-wrapper" onclick="openLetter()">
+                <div id="envelope" class="envelope w-64 h-48 bg-white rounded-lg shadow-2xl flex items-center justify-center relative cursor-pointer hover:scale-105 transition-transform">
+                    <div class="absolute top-0 left-0 w-0 h-0 border-l-[128px] border-l-transparent border-r-[128px] border-r-transparent border-t-[90px] border-t-[#f0f0f0] z-10 origin-top transition-transform duration-500"></div>
+                    <div class="absolute z-20 w-12 h-12 bg-[#D32F2F] rounded-full flex items-center justify-center shadow-lg border-2 border-[#B71C1C]">
+                        <span class="text-white font-script text-xl">Anu</span>
+                    </div>
+                    <div class="absolute bottom-4 text-center w-full">
+                        <p class="font-script text-2xl text-gray-400">For Anupama</p>
+                        <p class="text-xs text-gray-300 font-bold tracking-widest uppercase mt-1">Tap to Open</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SCREEN 2: MAIN FEED ==================== -->
+        <div id="screen-main" class="page hidden bg-[#FDF6F0] flex flex-col h-full relative">
+            
+            <!-- Top Control Bar -->
+            <div class="absolute top-4 left-0 w-full px-4 z-50 flex justify-between items-start pointer-events-none">
+                <div class="pointer-events-auto transform rotate-[-3deg] hover:rotate-0 transition-transform cursor-default">
+                    <div class="calendar-widget">
+                        <div class="cal-header"></div>
+                        <div class="cal-body">21<br><span style="font-size: 0.7rem; color: #999;">JAN</span></div>
+                    </div>
+                </div>
+                <div class="flex gap-2 pointer-events-auto items-center">
+                    <input type="file" id="localMusicInput" accept="audio/*" class="hidden">
+                    <button onclick="document.getElementById('localMusicInput').click()" class="w-12 h-12 bg-white rounded-full shadow-md flex items-center justify-center border-2 border-[#FFB7B2] active:scale-95 transition-transform hover:bg-[#FFF5F5] group relative" title="Upload Song">
+                        <i data-lucide="folder-open" class="w-5 h-5 text-[#FFB7B2]"></i>
+                    </button>
+                    <button onclick="shuffleMusic()" class="w-12 h-12 bg-white rounded-full shadow-md flex items-center justify-center border-2 border-[#B5EAD7] active:scale-95 transition-transform hover:bg-[#F0FFF4]" title="Shuffle Song">
+                        <i data-lucide="shuffle" class="w-5 h-5 text-[#B5EAD7]"></i>
+                    </button>
+                    <button id="playPauseBtn" onclick="toggleMusic()" class="w-12 h-12 bg-white rounded-full shadow-md flex items-center justify-center border-2 border-[#FF9AA2] active:scale-95 transition-transform hover:bg-[#FFF0F0]">
+                        <span id="icon-playing" class="hidden text-[#FF9AA2] animate-spin-slow"><i data-lucide="music" class="w-5 h-5"></i></span>
+                        <span id="icon-paused" class="text-[#FF9AA2]"><i data-lucide="play" class="w-5 h-5 ml-0.5"></i></span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Scrollable Content -->
+            <div class="flex-1 overflow-y-auto scrollbar-hide pb-20 relative z-20">
+                
+                <!-- Header -->
+                <div class="pt-16 px-6 text-center">
+                    <div class="inline-block relative">
+                        <h1 class="font-chunky text-4xl text-[#FF9AA2] leading-tight drop-shadow-sm">
+                            <span id="typewriter-text"></span><span class="cursor"></span>
+                        </h1>
+                        <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Sparkles.png" class="absolute -top-6 -right-6 w-8 animate-pulse" alt="sparkle">
+                    </div>
+                    <p class="text-xl text-[#9e33f5] font-bold mt-2 animate-float">January 21st</p>
+                </div>
+
+                <!-- Interactive Cake -->
+                <div class="my-8 flex justify-center relative group">
+                    <div class="relative w-64 h-64 flex items-center justify-center cursor-pointer" onclick="blowCandles()" onmouseenter="popConfettiMini(this)">
+                        <div class="absolute inset-0 bg-[#FFB7B2] rounded-full blur-3xl opacity-20 animate-pulse"></div>
+                        <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Food/Birthday%20Cake.png" class="w-48 relative z-10 sticker animate-float-delay" alt="Cake">
+                        <div id="candle-flame" class="flame z-20" style="top: 40px;"></div>
+                        <div id="blow-hint" class="absolute -bottom-2 bg-white px-3 py-1 rounded-full text-xs font-bold text-[#FF9AA2] shadow-sm border border-[#FF9AA2] opacity-0 transition-opacity duration-500 pointer-events-none">Tap to blow out!</div>
+                    </div>
+                </div>
+
+                <!-- Memories -->
+                <div class="px-4 mb-8">
+                    <div class="flex items-center gap-2 mb-4 px-2">
+                        <i data-lucide="camera" class="text-[#FF9AA2]"></i>
+                        <h2 class="font-bold text-xl text-[#4A403A]">Memories</h2>
+                    </div>
+                    <div class="flex overflow-x-auto gap-4 pb-8 px-2 snap-x snap-mandatory scrollbar-hide">
+                        <div class="polaroid flex-shrink-0 w-60 bg-white p-3 pb-8 shadow-lg rotate-2 snap-center transition-all duration-300">
+                            <div class="w-full h-72 bg-gray-100 overflow-hidden rounded-sm relative">
+                                <img src="Anu 4.jpeg" class="w-full h-full object-cover" alt="Memory">
+                            </div>
+                            <p class="font-script text-center text-xl mt-3 text-gray-600">Cutie!</p>
+                        </div>
+                        <div class="polaroid flex-shrink-0 w-60 bg-white p-3 pb-8 shadow-lg -rotate-1 snap-center transition-all duration-300">
+                            <div class="w-full h-72 bg-gray-100 overflow-hidden rounded-sm relative">
+                                <img src="Anu 1.jpeg" class="w-full h-full object-cover" alt="Memory">
+                            </div>
+                            <p class="font-script text-center text-xl mt-3 text-gray-600">Beautiful Smile</p>
+                        </div>
+                        <div class="polaroid flex-shrink-0 w-60 bg-white p-3 pb-8 shadow-lg -rotate-1 snap-center transition-all duration-300">
+                            <div class="w-full h-72 bg-gray-100 overflow-hidden rounded-sm relative">
+                                <img src="Anu 5.jpeg" class="w-full h-full object-cover" alt="Memory">
+                            </div>
+                            <p class="font-script text-center text-xl mt-3 text-gray-600">Being Cute</p>
+                        </div>
+                         <div class="polaroid flex-shrink-0 w-60 bg-white p-3 pb-8 shadow-lg rotate-3 snap-center transition-all duration-300">
+                            <div class="w-full h-72 bg-gray-100 overflow-hidden rounded-sm relative">
+                                <img src="Us.jpeg" class="w-full h-full object-cover" alt="Memory">
+                            </div>
+                            <p class="font-script text-center text-xl mt-3 text-gray-600">Crazy Times</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Letter Button -->
+                <div class="px-6 mb-8">
+                    <button onclick="openLetterModal()" class="w-full bg-white border-4 border-[#FFB7B2] rounded-2xl p-6 shadow-md active:scale-95 transition-transform relative overflow-hidden group">
+                        <div class="absolute top-0 left-0 w-full h-2 bg-stripes opacity-20"></div>
+                        <div class="flex flex-col items-center">
+                            <img src="https://img.icons8.com/?size=100&id=7oDLiKhJyBCV&format=png&color=000000" class="w-16 mb-2 sticker animate-wiggle" alt="letter">
+                            <span class="font-chunky text-[#FF9AA2] text-xl">Read My Letter</span>
+                            <span class="text-sm text-gray-400 font-bold mt-1">Tap to open</span>
+                        </div>
+                    </button>
+                </div>
+
+                <!-- Agenda -->
+                <div class="px-6 pb-8">
+                    <div class="bg-white/60 rounded-xl p-5 border-2 border-[#E2F0CB] relative">
+                        <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Pushpin.png" class="absolute -top-3 -right-2 w-6" alt="pin">
+                        <h3 class="font-bold text-[#8FB560] mb-3">Birthday Agenda:</h3>
+                        <div class="space-y-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-6 h-6 rounded-full bg-[#B5EAD7] flex items-center justify-center text-white"><i data-lucide="check" class="w-4 h-4"></i></div>
+                                <span class="text-gray-500 line-through decoration-[#FF9AA2]">Be adorable</span>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <div class="w-6 h-6 rounded-full bg-[#B5EAD7] flex items-center justify-center text-white"><i data-lucide="check" class="w-4 h-4"></i></div>
+                                <span class="text-gray-500 line-through decoration-[#FF9AA2]">Eat Healthy Foods</span>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <div class="w-6 h-6 rounded-full bg-[#B5EAD7] flex items-center justify-center text-white"><i data-lucide="check" class="w-4 h-4"></i></div>
+                                <span class="text-gray-500 line-through decoration-[#FF9AA2]">Being Cute😍!</span>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <div class="w-6 h-6 rounded-full border-2 border-[#FF9AA2] bg-white"></div>
+                                <span class="text-[#4A403A] font-bold">Have the best day ever!</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Nav -->
+            <div class="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white px-6 py-3 rounded-full shadow-xl border border-gray-100 flex items-center gap-8 z-40">
+                <button onclick="scrollToTop()" class="text-[#FF9AA2] hover:scale-110 transition-transform"><i data-lucide="home" class="w-6 h-6"></i></button>
+                <button onclick="popBigConfetti()" class="bg-[#FF9AA2] text-white p-3 rounded-full -mt-8 shadow-lg border-4 border-[#FDF6F0] hover:scale-110 transition-transform active:scale-95"><i data-lucide="heart" class="w-6 h-6 fill-current"></i></button>
+                <button onclick="openLetterModal()" class="text-[#FF9AA2] hover:scale-110 transition-transform"><i data-lucide="mail" class="w-6 h-6"></i></button>
+            </div>
+        </div>
+
+        <!-- ==================== MODAL: LETTER ==================== -->
+        <div id="letter-modal" class="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm hidden flex items-center justify-center p-4">
+            <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 relative transform scale-90 opacity-0 transition-all duration-300" id="letter-content">
+                <!-- Close Button -->
+                <button onclick="closeLetterModal()" class="absolute -top-3 -right-3 bg-[#FF9AA2] text-white p-2 rounded-full shadow-md hover:scale-110 transition-transform">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+
+                <!-- Content Container -->
+                <div class="border-2 border-dashed border-[#FFB7B2] rounded-xl p-4 h-[60vh] overflow-y-auto scrollbar-hide bg-[#FFFBF0] flex flex-col">
+                    <h2 class="font-script text-3xl text-[#FF9AA2] mb-4 text-center">Dearest Anupama❤️</h2>
+                    
+                    <!-- Dynamic Text -->
+                    <div id="letter-text-container" class="space-y-4 text-lg text-[#4A403A] leading-relaxed"></div>
+
+                    <!-- 🔴 STICKER POSITIONED AT BOTTOM -->
+                    <div class="mt-8 mb-4 flex justify-center w-full">
+                         <!-- Uses your uploaded sticker. If file not found, uses cat fallback -->
+                        <img src="Kissing sticker.webp" 
+                             class="w-28 opacity-90 sticker" 
+                             alt="sticker" 
+                             onerror="this.onerror=null; this.src='https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Cat%20with%20Wry%20Smile.png'">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Hidden Audio -->
+    <audio id="bgMusic" loop></audio>
+
+    <script>
+        lucide.createIcons();
+
+        // ==========================================
+        // 🎵 MUSIC CONFIGURATION (Fixed Links)
+        // ==========================================
+        
+        // I have converted your GitHub links to "raw" links so they play automatically.
+        const PLAYLIST = [
+            "song.mp3", // Tries to play local 'song.mp3' first
+            "https://raw.githubusercontent.com/AstroDev3D/Birthday.github.io/main/Tum%20Mere%20Kya%20Ho_audio.mp3",
+            "https://raw.githubusercontent.com/AstroDev3D/Birthday.github.io/main/Suroor_audio.mp3",
+            "https://raw.githubusercontent.com/AstroDev3D/Birthday.github.io/main/Sawaal_audio.mp3",
+            "https://raw.githubusercontent.com/AstroDev3D/Birthday.github.io/main/SAAWALI_audio.mp3",
+            "https://raw.githubusercontent.com/AstroDev3D/Birthday.github.io/main/Meri%20Banogi%20Kya_audio.mp3"
+        ];
+
+        // ==========================================
+
+        const bgMusic = document.getElementById('bgMusic');
+        let currentSongIndex = 0;
+        let candlesBlown = false;
+        let isTyping = false;
+        let songHistory = [];
+
+        bgMusic.src = PLAYLIST[0];
+
+        bgMusic.onplay = () => updateMusicIcon(true);
+        bgMusic.onpause = () => updateMusicIcon(false);
+        bgMusic.onended = () => updateMusicIcon(false);
+        bgMusic.onerror = () => {
+            console.log("Song load failed, trying next...");
+            // If current song fails (e.g. local song.mp3 missing), try next
+            if(currentSongIndex < PLAYLIST.length - 1) {
+                currentSongIndex++;
+                bgMusic.src = PLAYLIST[currentSongIndex];
+                // Note: Most browsers block auto-play without interaction, so it might wait for a click
+            }
+        }
+
+        function updateMusicIcon(isPlaying) {
+            const playingIcon = document.getElementById('icon-playing');
+            const pausedIcon = document.getElementById('icon-paused');
+            if(isPlaying) {
+                playingIcon.classList.remove('hidden');
+                pausedIcon.classList.add('hidden');
+            } else {
+                playingIcon.classList.add('hidden');
+                pausedIcon.classList.remove('hidden');
+            }
+        }
+
+        function openLetter() {
+            const envelope = document.getElementById('envelope');
+            const screenEnvelope = document.getElementById('screen-envelope');
+            const screenMain = document.getElementById('screen-main');
+            envelope.classList.add('open');
+            playMusic();
+            setTimeout(() => {
+                screenEnvelope.classList.remove('active');
+                screenEnvelope.style.display = 'none';
+                screenMain.classList.remove('hidden');
+                setTimeout(() => screenMain.classList.add('active'), 50);
+                startTypewriterHeader();
+                confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#FFB7B2', '#B5EAD7', '#FFD700'] });
+                setTimeout(() => { document.getElementById('blow-hint').style.opacity = '1'; }, 2000);
+            }, 800);
+        }
+
+        function playMusic() {
+            bgMusic.play().catch(e => console.log("Audio waiting for interaction"));
+        }
+
+        function toggleMusic() {
+            if (!bgMusic.paused) bgMusic.pause();
+            else playMusic();
+        }
+
+        function shuffleMusic() {
+            songHistory.push(currentSongIndex);
+            if (songHistory.length > 2) songHistory.shift();
+            const allIndices = Array.from({length: PLAYLIST.length}, (_, i) => i);
+            const availableIndices = allIndices.filter(index => !songHistory.includes(index));
+            if (availableIndices.length > 0) {
+                const randomIndex = Math.floor(Math.random() * availableIndices.length);
+                currentSongIndex = availableIndices[randomIndex];
+            } else {
+                currentSongIndex = (currentSongIndex + 1) % PLAYLIST.length;
+            }
+            bgMusic.src = PLAYLIST[currentSongIndex];
+            playMusic();
+        }
+
+        // Local File Input Logic
+        document.getElementById('localMusicInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const fileURL = URL.createObjectURL(file);
+                bgMusic.src = fileURL;
+                playMusic();
+                const btn = e.target.nextElementSibling;
+                btn.classList.add('ring-2', 'ring-green-400');
+                setTimeout(() => btn.classList.remove('ring-2', 'ring-green-400'), 1000);
+            }
+        });
+
+        function startTypewriterHeader() {
+            const text = "Happy Birthday Anupama!";
+            const element = document.getElementById('typewriter-text');
+            let i = 0;
+            element.innerHTML = ""; 
+            function type() {
+                if (i < text.length) {
+                    element.innerHTML += text.charAt(i);
+                    i++;
+                    setTimeout(type, 100);
+                }
+            }
+            type();
+        }
+
+        function blowCandles() {
+            if (candlesBlown) return;
+            const flame = document.getElementById('candle-flame');
+            const hint = document.getElementById('blow-hint');
+            flame.classList.add('out');
+            hint.style.opacity = '0';
+            confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 }, colors: ['#FFD700', '#FFA500', '#FF4500'], scalar: 1.2 });
+            setTimeout(() => {
+                hint.textContent = "Make a wish!";
+                hint.style.opacity = '1';
+                hint.classList.add('text-[#B5EAD7]');
+            }, 1000);
+            candlesBlown = true;
+        }
+
+        const LETTER_CONTENT = [
+            "Wishing you a birthday as beautiful and amazing as you are!",
+            "You bring so much joy into my life, and I'm so incredibly lucky to know you. Watching you smile is my favorite thing in the world.",
+            "May your day be filled with love, laughter, and all the cake you can eat. You deserve everything wonderful.",
+            "Happy Birthday, my love!"
+        ];
+
+        function openLetterModal() {
+            const modal = document.getElementById('letter-modal');
+            const content = document.getElementById('letter-content');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                content.classList.remove('scale-90', 'opacity-0');
+                content.classList.add('scale-100', 'opacity-100');
+                if(!isTyping) typeWriterLetter();
+            }, 10);
+        }
+
+        function typeWriterLetter() {
+            isTyping = true;
+            const container = document.getElementById('letter-text-container');
+            container.innerHTML = "";
+            let pIndex = 0;
+            let charIndex = 0;
+            function typeParagraph() {
+                if (pIndex < LETTER_CONTENT.length) {
+                    let currentP = container.children[pIndex];
+                    if (!currentP) {
+                        currentP = document.createElement('p');
+                        if(pIndex === LETTER_CONTENT.length -1) currentP.className = "text-center mt-6 font-bold text-[#FF9AA2]";
+                        container.appendChild(currentP);
+                        charIndex = 0;
+                    }
+                    const text = LETTER_CONTENT[pIndex];
+                    if (charIndex < text.length) {
+                        currentP.innerHTML += text.charAt(charIndex);
+                        charIndex++;
+                        setTimeout(typeParagraph, Math.random() * 30 + 30);
+                    } else {
+                        pIndex++;
+                        charIndex = 0;
+                        setTimeout(typeParagraph, 300);
+                    }
+                }
+            }
+            typeParagraph();
+        }
+
+        function closeLetterModal() {
+            const modal = document.getElementById('letter-modal');
+            const content = document.getElementById('letter-content');
+            content.classList.remove('scale-100', 'opacity-100');
+            content.classList.add('scale-90', 'opacity-0');
+            setTimeout(() => { modal.classList.add('hidden'); }, 300);
+        }
+
+        function popBigConfetti() {
+            confetti({ particleCount: 100, spread: 100, origin: { y: 0.8 }, colors: ['#FF9AA2', '#FFB7B2', '#FFD700', '#FFF'] });
+            setTimeout(() => { confetti({ particleCount: 50, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#FF9AA2', '#B5EAD7'] }); }, 200);
+            setTimeout(() => { confetti({ particleCount: 50, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#FF9AA2', '#B5EAD7'] }); }, 200);
+        }
+
+        function popConfettiMini(element) {
+            const rect = element.getBoundingClientRect();
+            const x = (rect.left + rect.width / 2) / window.innerWidth;
+            const y = (rect.top + rect.height / 2) / window.innerHeight;
+            confetti({ particleCount: 15, spread: 40, origin: { x: x, y: y }, scalar: 0.6, colors: ['#FFD700', '#FF9AA2', '#B5EAD7'] });
+        }
+
+        function scrollToTop() {
+            document.querySelector('.overflow-y-auto').scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        document.addEventListener('click', function(e) {
+            if(e.target.closest('button') || e.target.closest('.envelope') || e.target.closest('#localMusicInput')) return;
+            const heart = document.createElement('div');
+            heart.className = 'heart-particle';
+            heart.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.28 3.6-2.34 3.6-4.44 0-1.92-1.58-3.56-3.6-3.56-1.5 0-2.82 1-3.6 2.36-0.78-1.36-2.1-2.36-3.6-2.36-2.02 0-3.6 1.64-3.6 3.56 0 2.1 2.11 3.16 3.6 4.44 1.95 1.67 3.6 3.56 3.6 3.56s1.65-1.89 3.6-3.56z"></path></svg>`;
+            heart.style.left = (e.clientX - 12) + 'px';
+            heart.style.top = (e.clientY - 12) + 'px';
+            document.body.appendChild(heart);
+            setTimeout(() => heart.remove(), 1000);
+        });
+    </script>
+</body>
+</html>
